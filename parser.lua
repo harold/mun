@@ -29,38 +29,37 @@ function parseFuncs.pushExpr()
 	table.insert( ast, {} )
 end
 
-function parseFuncs.pushUnquotedItem( s )
+function parseFuncs.addItem( inQuoted, inS )
 	local theItem = {}
-	theItem.quoted = false
-	theItem.value = s
+	theItem.quoted = inQuoted
+	theItem.value = inS
 	table.insert( ast[#ast], theItem )
 end
 
 function parseFuncs.pushQuotedItem( s )
-	local theItem = {}
-	theItem.quoted = true
-	theItem.value = s
-	table.insert( ast[#ast], theItem )
+	parseFuncs.addItem( true, s )
+end
+
+function parseFuncs.pushUnquotedItem( s )
+	parseFuncs.addItem( false, s )
+end
+
+function parseFuncs.addExpr( inQuoted )
+	local node = table.remove( ast )
+	node.quoted = inQuoted
+	if ast[1] then
+		table.insert( ast[#ast], node )
+	else
+		table.insert( ast.program, node )
+	end
 end
 
 function parseFuncs.popQuotedExpr( )
-	local node = table.remove( ast )
-	node.quoted = true
-	if ast[1] then
-		table.insert( ast[#ast], node )
-	else
-		table.insert( ast.program, node )
-	end
+	parseFuncs.addExpr( true )
 end
 
 function parseFuncs.popUnquotedExpr( )
-	local node = table.remove( ast )
-	node.quoted = false
-	if ast[1] then
-		table.insert( ast[#ast], node )
-	else
-		table.insert( ast.program, node )
-	end
+	parseFuncs.addExpr( false )
 end
 
 ast = {
