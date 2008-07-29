@@ -89,35 +89,3 @@ function table.dump( t, accessPath, tablePath )
 		print("")
 	end
 end
-
-function table.equal( t1, t2 )
-	-- Easy out
-	if t1 == t2 then
-		return true
-	end
-	
-	-- Ensure all keys in t1 match in t2
-	for k,t1v in pairs( t1 ) do
-		if type(t1v)=='table' then
-			local t2v = t2[k]
-			if not t2v or type(t2v)~='table' then
-				return false
-			elseif t2v ~= t1v then
-				return table.equal( t1v, t2v )
-			end
-		else
-			if t2[k] ~= t1v then
-				return false
-			end
-		end
-	end
-	
-	-- Ensure t2 doesn't have keys that aren't in t1
-	for k,_ in pairs(t2) do
-		if t1[k] == nil then
-			return false
-		end
-	end
-	
-	return true
-end
