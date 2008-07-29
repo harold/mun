@@ -2,6 +2,11 @@ require 'lpeg'
 require 're'
 require 'support/utils'
 
+if not arg then arg = {} end
+if not arg.debugLevel then arg.debugLevel = 0 end
+
+module( 'parser', package.seeall )
+
 grammar = [[
 	Program            <- (<Expression> %nl?)+
 
@@ -10,19 +15,12 @@ grammar = [[
 	UnquotedExpression <- ( "[" <Item> (<Space> <Item>)* <Space>? "]" <Space>?) -> popUnquotedExpr
 
 	Item               <- <QuotedItem> / <UnquotedItem>
-	QuotedItem         <- "'" <ItemRegex> -> pushQuotedItem   / <Expression>
-	UnquotedItem       <-     <ItemRegex> -> pushUnquotedItem / <Expression>
-	ItemRegex          <- [a-z0-9+/*-]+
+	QuotedItem         <- "'" <Symbol> -> pushQuotedItem   / <Expression>
+	UnquotedItem       <-     <Symbol> -> pushUnquotedItem / <Expression>
+	Symbol             <- [a-z0-9+/*-]+
 
 	Space              <- (%s)+
 ]]
-
-code = [==[
-[+ 5 [- 1 3]]
-[* 6 7]
-[print [fib 8]]
-[q '[a b c]]
-]==]
 
 parseFuncs = {}
 function parseFuncs.pushExpr()
@@ -62,10 +60,28 @@ function parseFuncs.popUnquotedExpr( )
 	parseFuncs.addExpr( false )
 end
 
-ast = {
-	program = {}
-}
+function parseFile( file )
+	return parse( io.input(file):read("*a") )
+end
 
-print( code ) 
-print( re.compile( grammar, parseFuncs ):match( code ) )
-table.dump( ast.program )
+function parse( code )
+	local ast = parseToAST( code )
+	return codeFromAST( ast )
+end
+
+function parseToAST( code )
+	-- intentionally global; reset on each call
+	ast = { program = {} }
+	local matchLength = re.compile( grammar, parseFuncs ):match( code )
+	if not matchLength or (matchLength < #code) then
+		if arg.debugLevel > 0 then
+			table.dump( ast )
+		end
+		error( "Failed to parse code! (Got to around char "..tostring(matchLength).." / "..(#code)..")" )
+	end
+	return ast.program
+end
+
+function codeFromAST( ast )
+	error( "TODO: implement codeFromAST" )
+end

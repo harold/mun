@@ -1,0 +1,101 @@
+#!/usr/bin/env lua
+
+require 'support/args'
+local success = args.processArguments{
+	unnamed  = { 'sourcefile' },
+	named    = { 'debugLevel', 'help', 'profile', 'interactive', 'examples' },
+	flags    = { 'help', 'profile', 'interactive', 'examples' },
+	numbers  = { 'debugLevel' },
+	required = { }
+}
+
+if not success then
+	arg.help = true
+end
+
+if not arg.sourcefile then
+	arg.interactive = true
+end
+
+if not arg.debugLevel then
+	arg.debugLevel = 0
+end
+
+USAGE = [[
+Usage: mun [-h] [-e] [-d debugLevel] [-p] [-i] [sourcefile.mun]
+       -h,--help          show this usage message
+       -e,--examples      show some help examples
+       -d,--debugLevel    the verbosity of debug messages to show
+                          0 = no debug messages (the default)
+                          1 = non-fatal errors only
+                          2 = ...plus warnings
+                          3 = ...plus info
+                          4 = ...plus trivial notes
+       -p,--profile       show profile statistics after running the code
+       -i,--interactive   enter interactive mode (read/evaluate/print loop)
+                          automatically enabled if no source file is supplied
+]]
+
+EXAMPLES  = [[
+Examples:
+       mun helloworld.mun
+       # Run helloworld.mun
+       
+       mun --profile helloworld.mun
+       # Run helloworld.mun and show profiling information about the program
+       
+       mun -d 2 helloworld.mun
+       # Run helloworld.mun and with debug errors and warnings shown
+       
+       mun
+       # Run mun in interactive mode
+       
+       mun -i mylibrary.mun
+       # Run mylibrary.mun and then enter the interactive mode
+]]
+
+if arg.help or arg.examples then
+	print( USAGE )
+	if arg.examples then
+		print( EXAMPLES )
+	end
+	os.exit( )
+end
+
+require 'support/parser'
+require 'support/runtime'
+
+if arg.sourcefile then
+	if arg.profile then
+		if not pcall( function()
+			require "luarocks.require"
+			require "profiler"
+			profiler.__profileFile = string.gsub( arg.sourcefile, "[^.]+$", "profile" )
+			profiler.start( profiler.__profileFile )
+		end ) then
+			print( "Error loading LuaProfiler via luarocks; profiling disabled.")
+		end
+	end
+
+	-- TODO: allow loading pre-parsed environments
+	if not string.find( arg.sourcefile, "\.mun$" ) and arg.debugLevel >= 3 then
+		print( "Source file '"..(arg.sourcefile).."' does not end in .mun" )
+	end
+	io.input( arg.sourcefile )
+	local code = io.read("*a")
+	local program = parser.parse( code )
+	runtime.eval( program )
+	if arg.profile and profiler then
+		profiler:stop()
+	end
+end
+
+if arg.interactive then
+	print( "Error: Interactive mode not implemented yet" )
+	os.exit( )
+end
+
+if profiler then
+	print( "Profile written to: "..profiler.__profileFile)
+	print( "Use 'lua support/analyze_profile.lua -v "..profiler.__profileFile.." > stats.txt' for details." )
+end
