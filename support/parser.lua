@@ -10,8 +10,8 @@ module( 'parser', package.seeall )
 grammar = [[
 	Program            <- (<Expression> %nl?)+
 	Expression         <- &. -> pushExpr <Space>? (<QuotedExpression> / <UnquotedExpression>)
-	QuotedExpression   <- ("'[" <Space>? <Item>? (<Space> <Item>)* <Space>? "]" <Space>?) -> popQuotedExpr
-	UnquotedExpression <- ( "[" <Space>? <Item>? (<Space> <Item>)* <Space>? "]" <Space>?) -> popUnquotedExpr
+	QuotedExpression   <- ("'[" <Space>? <Item>? (<Space> <Item>)* <Space>? "]") -> popQuotedExpr
+	UnquotedExpression <- ( "[" <Space>? <Item>? (<Space> <Item>)* <Space>? "]") -> popUnquotedExpr
 	
 	Item           <- (<QuotedSymbol> / <UnquotedSymbol> / <Number> / <String>) / <Expression>
 	QuotedSymbol   <- "'" ([a-zA-Z+*\-] [a-zA-Z_+*\-]*) -> pushQuotedSymbol
@@ -93,5 +93,7 @@ function parseToAST( code )
 end
 
 function codeFromAST( ast )
+	-- temporary code for fun:
+	table.dump( ast )
 	error( "TODO: implement codeFromAST" )
 end
