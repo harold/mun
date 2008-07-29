@@ -1,4 +1,4 @@
-[+ 5 [- 1 3]]
-[* 6 7]
-[print [fib 8]]
-[q '[a b c]]
+[define square x 
+	[* x x]
+]
+[print [map square '[1 2 3 4 5]]]

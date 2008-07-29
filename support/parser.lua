@@ -9,17 +9,17 @@ module( 'parser', package.seeall )
 
 grammar = [[
 	Program            <- (<Expression> %nl?)+
-
 	Expression         <- &. -> pushExpr <Space>? (<QuotedExpression> / <UnquotedExpression>)
-	QuotedExpression   <- ("'[" <Item> (<Space> <Item>)* <Space>? "]" <Space>?) -> popQuotedExpr
-	UnquotedExpression <- ( "[" <Item> (<Space> <Item>)* <Space>? "]" <Space>?) -> popUnquotedExpr
-
-	Item               <- <QuotedItem> / <UnquotedItem>
-	QuotedItem         <- "'" <Symbol> -> pushQuotedItem   / <Expression>
-	UnquotedItem       <-     <Symbol> -> pushUnquotedItem / <Expression>
-	Symbol             <- [a-z0-9+/*-]+
-
-	Space              <- (%s)+
+	QuotedExpression   <- ("'[" <Space>? <Item>? (<Space> <Item>)* <Space>? "]" <Space>?) -> popQuotedExpr
+	UnquotedExpression <- ( "[" <Space>? <Item>? (<Space> <Item>)* <Space>? "]" <Space>?) -> popUnquotedExpr
+	
+	Item           <- (<QuotedSymbol> / <UnquotedSymbol> / <Number> / <String>) / <Expression>
+	QuotedSymbol   <- "'" ([a-zA-Z+*\-] [a-zA-Z_+*\-]*) -> pushQuotedSymbol
+	UnquotedSymbol <-     ([a-zA-Z+*\-] [a-zA-Z_+*\-]*) -> pushUnquotedSymbol
+	Number         <- ( ( [+-]? [0-9] [0-9_]* ('.' [0-9] [0-9_]*)? ) / ( [+-]? '.' [0-9] [0-9_]* ) ) -> pushNumber
+	String         <- ( '"' ([^"]* -> pushString) '"' )
+	
+	Space <- (%s)+
 ]]
 
 parseFuncs = {}
@@ -27,24 +27,10 @@ function parseFuncs.pushExpr()
 	table.insert( ast, {} )
 end
 
-function parseFuncs.addItem( inQuoted, inS )
-	local theItem = {}
-	theItem.quoted = inQuoted
-	theItem.value = inS
-	table.insert( ast[#ast], theItem )
-end
-
-function parseFuncs.pushQuotedItem( s )
-	parseFuncs.addItem( true, s )
-end
-
-function parseFuncs.pushUnquotedItem( s )
-	parseFuncs.addItem( false, s )
-end
-
-function parseFuncs.addExpr( inQuoted )
+function parseFuncs.addExpr( inQuotedFlag )
 	local node = table.remove( ast )
-	node.quoted = inQuoted
+	node.type = "expression"
+	if inQuotedFlag then node.quoted = true end
 	if ast[1] then
 		table.insert( ast[#ast], node )
 	else
@@ -58,6 +44,30 @@ end
 
 function parseFuncs.popUnquotedExpr( )
 	parseFuncs.addExpr( false )
+end
+
+function parseFuncs.addItem( inQuotedFlag, inType, inValue )
+	local theItem = {}
+	if inQuotedFlag then theItem.quoted = true end
+	theItem.type = inType
+	theItem.value = inValue
+	table.insert( ast[#ast], theItem )
+end
+
+function parseFuncs.pushQuotedSymbol( s )
+	parseFuncs.addItem( true, "symbol", s )
+end
+
+function parseFuncs.pushUnquotedSymbol( s )
+	parseFuncs.addItem( false, "symbol", s )
+end
+
+function parseFuncs.pushNumber( s )
+	parseFuncs.addItem( false, "number", tonumber(s) )
+end
+
+function parseFuncs.pushString( s )
+	parseFuncs.addItem( false, "string", s )
 end
 
 function parseFile( file )

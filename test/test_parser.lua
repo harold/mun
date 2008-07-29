@@ -24,22 +24,18 @@ function test02_ast_results( )
 		ast, 
 		{ -- main program
 			{
-				type="list",
-				quoted=false,
+				type="expression",
 				{
 					type="symbol",
-					quoted=false,
 					value="+"
 				},
 				{
 					type="number",
-					quoted=false,
-					value="40"
+					value=40
 				},
 				{
 					type="number",
-					quoted=false,
-					value="2"
+					value=2
 				}
 			}
 		}
