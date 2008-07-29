@@ -73,7 +73,7 @@ function table.dump( t, accessPath, tablePath )
 				table.dump( v, accessPath, tablePath )
 			end
 		else
-			io.write( tostring(value) )
+			io.write( tostring(v) )
 		end
 
 		if i < #allKeysInPrettyOrder then
