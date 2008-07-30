@@ -16,6 +16,9 @@ function test01_syntactic_correctness( )
 	assertDoesNotError( parser.parseToAST, "[foo ]" )
 	assertDoesNotError( parser.parseToAST, "[ foo]" )
 	assertDoesNotError( parser.parseToAST, "[ foo ]" )
+	assertDoesNotError( parser.parseToAST, "  [foo]" )
+	assertDoesNotError( parser.parseToAST, "\n\n[foo]\t \n \t\n[bar]\n\n" )
+	assertDoesNotError( parser.parseToAST, "\n[foo] " )
 end
 
 function test02_ast_results( )
@@ -23,6 +26,7 @@ function test02_ast_results( )
 	assertTableEquals(
 		ast, 
 		{ -- main program
+			type="program",
 			{
 				type="expression",
 				{
@@ -42,4 +46,4 @@ function test02_ast_results( )
 	)
 end
 
-runTests{ useHTML = false }
+runTests{ useHTML = true }

@@ -1,13 +1,14 @@
 require 'lpeg'
 require 're'
 require 'support/utils'
+require 'support/runtime'
 
 if not arg then arg = {} end
 if not arg.debugLevel then arg.debugLevel = 0 end
 
 module( 'parser', package.seeall )
 
-grammar = [[
+gGrammar = [[
 	Program            <- (<Expression> %nl?)+
 	Expression         <- &. -> pushExpr <Space>? (<QuotedExpression> / <UnquotedExpression>)
 	QuotedExpression   <- ("'[" <Space>? <Item>? (<Space> <Item>)* <Space>? "]") -> popQuotedExpr
@@ -22,78 +23,93 @@ grammar = [[
 	Space <- (%s)+
 ]]
 
-parseFuncs = {}
-function parseFuncs.pushExpr()
-	table.insert( ast, {} )
+gParseFuncs = {}
+function gParseFuncs.pushExpr()
+	table.insert( gAST, {} )
 end
 
-function parseFuncs.addExpr( inQuotedFlag )
-	local node = table.remove( ast )
-	node.type = "expression"
-	if inQuotedFlag then node.quoted = true end
-	if ast[1] then
-		table.insert( ast[#ast], node )
+function gParseFuncs.addExpr( inQuotedFlag )
+	local theNode = table.remove( gAST )
+	theNode.type = "expression"
+	if inQuotedFlag then theNode.quotedFlag = true end
+	if gAST[1] then
+		table.insert( gAST[#gAST], theNode )
 	else
-		table.insert( ast.program, node )
+		table.insert( gAST.program, theNode )
 	end
 end
 
-function parseFuncs.popQuotedExpr( )
-	parseFuncs.addExpr( true )
+function gParseFuncs.popQuotedExpr( )
+	gParseFuncs.addExpr( true )
 end
 
-function parseFuncs.popUnquotedExpr( )
-	parseFuncs.addExpr( false )
+function gParseFuncs.popUnquotedExpr( )
+	gParseFuncs.addExpr( false )
 end
 
-function parseFuncs.addItem( inQuotedFlag, inType, inValue )
+function gParseFuncs.addItem( inQuotedFlag, inType, inValue )
 	local theItem = {}
-	if inQuotedFlag then theItem.quoted = true end
-	theItem.type = inType
+	if inQuotedFlag then theItem.quotedFlag = true end
+	theItem.type  = inType
 	theItem.value = inValue
-	table.insert( ast[#ast], theItem )
+	table.insert( gAST[#gAST], theItem )
 end
 
-function parseFuncs.pushQuotedSymbol( s )
-	parseFuncs.addItem( true, "symbol", s )
+function gParseFuncs.pushQuotedSymbol( s )
+	gParseFuncs.addItem( true, "symbol", s )
 end
 
-function parseFuncs.pushUnquotedSymbol( s )
-	parseFuncs.addItem( false, "symbol", s )
+function gParseFuncs.pushUnquotedSymbol( s )
+	gParseFuncs.addItem( false, "symbol", s )
 end
 
-function parseFuncs.pushNumber( s )
-	parseFuncs.addItem( false, "number", tonumber(s) )
+function gParseFuncs.pushNumber( s )
+	gParseFuncs.addItem( false, "number", tonumber(s) )
 end
 
-function parseFuncs.pushString( s )
-	parseFuncs.addItem( false, "string", s )
+function gParseFuncs.pushString( s )
+	gParseFuncs.addItem( false, "string", s )
 end
 
-function parseFile( file )
+function parseFile( inFilePath )
 	return parse( io.input(file):read("*a") )
 end
 
-function parse( code )
-	local ast = parseToAST( code )
-	return codeFromAST( ast )
+function parse( inCodeString )
+	local theASTRoot = parseToAST( inCodeString )
+	return codeFromAST( theASTRoot.program )
 end
 
-function parseToAST( code )
-	-- intentionally global; reset on each call
-	ast = { program = {} }
-	local matchLength = re.compile( grammar, parseFuncs ):match( code )
-	if not matchLength or (matchLength < #code) then
+function parseToAST( inCodeString )
+	gAST = { program = { type="program" } }
+	local theMatchLength = re.compile( gGrammar, gParseFuncs ):match( inCodeString )
+	if not theMatchLength or (theMatchLength < #inCodeString) then
 		if arg.debugLevel > 0 then
-			table.dump( ast )
+			table.dump( gAST )
 		end
-		error( "Failed to parse code! (Got to around char "..tostring(matchLength).." / "..(#code)..")" )
+		error( "Failed to parse code! (Got to around char "..tostring(theMatchLength).." / "..(#inCodeString)..")" )
 	end
-	return ast.program
+	return gAST.program
 end
 
-function codeFromAST( ast )
-	-- temporary code for fun:
-	table.dump( ast )
-	error( "TODO: implement codeFromAST" )
+function codeFromAST( inASTNode )
+	local theResult
+	if inASTNode.type == "program" then
+		theResult = runtime.createList( )
+		for i,theChildNode in ipairs( inASTNode ) do
+			runtime.appendListItem( theResult, codeFromAST( theChildNode ) )
+		end
+
+	elseif inASTNode.type == "expression" then
+		theResult = runtime.createList{ quotedFlag = inASTNode.quotedFlag }
+		for i,theChildNode in ipairs( inASTNode ) do
+			runtime.appendListItem( theResult, codeFromAST( theChildNode ) )
+		end
+
+	else -- symbol, number, string
+		theResult = runtime[ inASTNode.type ][ inASTNode.value ]
+
+	end
+	
+	return theResult
 end
