@@ -1,9 +1,14 @@
-[define map inFunc inList
-	[pair [inFunc [head inList]]
-		[map 'inFunc [rest inList]]
+[print 42]
+[define map
+	[lambda [inFunc inList]
+		[join [inFunc [head inList]]
+			[map 'inFunc [tail inList]]
+		]
 	]
 ]
-[define square x 
-	[* x x]
+[define square
+	[lambda [x]
+		[* x x]
+	]
 ]
-[print [map square '[1 2 3 4 5]]]
+[print [map 'square '[1 2 3 4 5]]]

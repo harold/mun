@@ -64,6 +64,7 @@ end
 
 require 'support/parser'
 require 'support/runtime'
+require 'support/bootstrap'
 
 if arg.sourcefile then
 	if arg.profile then
@@ -84,7 +85,8 @@ if arg.sourcefile then
 	io.input( arg.sourcefile )
 	local code = io.read("*a")
 	local program = parser.parse( code )
-	runtime.eval( program )
+	runtime.evalExpressions( runtime.GLOBAL, program )
+	-- runtime.eval( runtime.GLOBAL, program )
 	if arg.profile and profiler then
 		profiler:stop()
 	end
