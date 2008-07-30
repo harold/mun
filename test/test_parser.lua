@@ -46,4 +46,85 @@ function test02_ast_results( )
 	)
 end
 
+function test03_codeFromAST( )
+	local theCode = "[foo bar]"
+	local theProgram = parser.parse( theCode )
+	assertTableEquals( theProgram, {
+	  head = {
+	    head = {
+	      symbol = "foo"
+	    },
+	    tail = {
+	      head = {
+	        symbol = "bar"
+	      },
+	    }
+	  },
+	} )
+
+	local theCode = "[foo 'bar 17 \"whee\"]"
+	local theProgram = parser.parse( theCode )
+	assertTableEquals( theProgram, {
+	  head = {
+	    head = {
+	      symbol = "foo"
+	    },
+	    tail = {
+	      head = {
+	        symbol = "bar",
+	        quotedFlag = true
+	      },
+	      tail = {
+	      	head = 17,
+	      	tail = {
+	      		head = "whee"
+	      	}
+	      }
+	    }
+	  },
+	} )
+
+	local theCode = "[foo [bar]] [jim]"
+	local theProgram = parser.parse( theCode )
+	assertTableEquals( theProgram, {
+	  head = {
+	    head = {
+	      symbol = "foo"
+	    },
+	    tail = {
+	    	head = {
+	    		head = {
+	    			symbol = "bar"
+	    		}
+	    	}
+	    }
+	  },
+	  tail = {
+	  	head = {
+	  		head = {
+		  		symbol = "jim"  			
+	  		}
+	  	}
+	  }
+	} )
+	
+	local theCode = [===[
+		[define map inFunc inList
+			[pair [inFunc [head inList]]
+				[map 'inFunc [rest inList]]
+			]
+		]
+		[define square x 
+			[* x x]
+		]
+		[print [map square '[1 2 3 4 5]]]
+	]===]
+	
+	local theProgram = parser.parse( theCode )	
+	-- assertTableEquals( theProgram, {
+	-- 	head={}
+	-- 	rest={}
+	-- })
+end
+
 runTests{ useHTML = true }

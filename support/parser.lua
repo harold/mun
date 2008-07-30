@@ -77,7 +77,7 @@ end
 
 function parse( inCodeString )
 	local theASTRoot = parseToAST( inCodeString )
-	return codeFromAST( theASTRoot.program )
+	return codeFromAST( theASTRoot )
 end
 
 function parseToAST( inCodeString )
@@ -94,20 +94,19 @@ end
 
 function codeFromAST( inASTNode )
 	local theResult
-	if inASTNode.type == "program" then
-		theResult = runtime.createList( )
-		for i,theChildNode in ipairs( inASTNode ) do
-			runtime.appendListItem( theResult, codeFromAST( theChildNode ) )
+	if inASTNode.type == "program" or inASTNode.type == "expression" then
+		local theHead
+		for i=#inASTNode,1,-1 do
+			theHead = runtime.join( codeFromAST( inASTNode[ i ] ), theHead )
 		end
+		theHead.quotedFlag = inASTNode.quotedFlag
+		theResult = theHead
 
-	elseif inASTNode.type == "expression" then
-		theResult = runtime.createList{ quotedFlag = inASTNode.quotedFlag }
-		for i,theChildNode in ipairs( inASTNode ) do
-			runtime.appendListItem( theResult, codeFromAST( theChildNode ) )
-		end
-
-	else -- symbol, number, string
-		theResult = runtime[ inASTNode.type ][ inASTNode.value ]
+	elseif inASTNode.type == "symbol" then
+		theResult = runtime.createValue( inASTNode.type, inASTNode.value, inASTNode.quotedFlag )
+	
+	else -- number, string
+		theResult = inASTNode.value
 
 	end
 	
