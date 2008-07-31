@@ -4,6 +4,14 @@ function join( inHeadValue, inTailValue )
 	return { head=inHeadValue, tail=inTailValue }
 end
 
+function list( ... )
+	local theHead
+	for i=select('#',...),1,-1 do
+		theHead = join( select(i,...), theHead )
+	end
+	return theHead
+end
+
 function createValue( inType, inValue, inQuotedFlag )
 	local theResult
 	if inType == 'symbol' then
@@ -31,59 +39,96 @@ end
 
 function set( inContext, inName, inValue )
 	inContext[ inName ] = inValue
-	return inContext
+	return inValue
+end
+
+function get( inContext, inName )
+	return inContext[ inName ]
+end
+
+
+
+function evalExpressions( inCallingContext, inList )
+	eval( inCallingContext, inList.head )
+	if inList.tail then
+		return evalExpressions( inCallingContext, inList.tail )
+	end
+end
+
+gForms = {}
+
+function gForms.globalWithValues( inList )
+	local theContext = createContext( GLOBAL )
+end
+
+function isSimpleValue( inValue )
+	return type(inValue)=='string' or type(inValue)=='number'
+end
+
+function isSymbol( inValue )
+	return type(inValue)=='table' and inValue.symbol
 end
 
 function isPair( inValue )
 	return type(inValue)=='table' and inValue.head
 end
 
-function evalExpressions( inCallingContext, inList )
-	eval( inCallingContext, inList.head )
-	if inList.tail then
-		evalExpressions( inCallingContext, inList.tail )
+function isFunction( inValue )
+	return type(inValue)=='function'
+end
+
+function isQuoted( inValue )
+	return type(inValue)=='table' and inValue.quotedFlag
+end
+
+function isLambda( inValue )
+	return type(inValue)=='table' and inValue.head and inValue.head.symbol=="lambda"
+end
+
+function listOfValues( inContext, inList )
+	return inList and join( eval( inContext, inList.head ), listOfValues( inContext, inList.tail ) )
+end
+
+function eval( inContext, inValue )
+	local theResult
+	if isSimpleValue( inValue ) then
+		theResult = inValue
+	elseif isSymbol( inValue ) then
+		theResult = get( inContext, inValue.symbol )
+	elseif isQuoted( inValue ) then
+		theResult = inValue
+	elseif isLambda( inValue ) then
+		theResult = makeProcedure( inContext, inValue.tail, inValue.tail.tail )
+	elseif isPair( inValue ) then
+		local theRunnable = eval( inContext, inValue.head )
+		if not theRunnable then
+			print( "Failed to find runnable/procedure:" )
+			table.dump( inValue.head )
+			error( "Bailing..." )
+		end		
+		theResult = apply( theRunnable, listOfValues( inContext, inValue.tail ) )
+	else
+		error( "Unknown value type passed to eval ("..tostring(inValue)..")")
+	end
+	return theResult
+end
+
+function apply( inRunnable, inArgList )
+	-- local theForm = gForms[ theProcedure ] or gForms.globalWithValues
+	-- local theContext = theForm( inValue )
+		
+	if isFunction( inRunnable ) then
+		inRunnable( theContext, inArgList )
+	elseif isPair( inRunnable ) then
+		table.dump( inRunnable )
+--		error( "Not implemented: evaluating sub-lists" )
+	else
+		error( "WTF KIND OF RUNNABLE IS THIS? ("..tostring(inRunnable)..")" )
 	end
 end
 
--- [print "foo"]
-function eval( inCallingContext, inValue )
-	local theResult
-
-	if type(inValue)=='string' then
-		theResult = inValue
-	
-	elseif type(inValue)=='number' then
-		theResult = inValue
-		
-	elseif type(inValue)=='table' then
-		local theProcedure = inValue.head
-		if type(theProcedure) == 'table' and theProcedure.symbol then
-			theProcedure = inCallingContext[ theProcedure.symbol ]
-		end		
-
-		if type( theProcedure )	== 'function' then
-			-- TODO: special form
-			local theContext  = createContext( inCallingContext )
-			-- local theValues   = join( eval( ) )
-			-- local theArgPair  = inValue.tail
-			-- local theArgValue = theArgPair.head
-			-- while theArgPair do
-			-- 	theValues
-			-- end
-			theResult = theProcedure( theContext, inValue.tail )
-		elseif isPair( inValue ) then
-			error( "Not yet implemented: evaluating sub-lists" )
-		else
-			-- bork
-			error( "Can't evaluate expression because the first value isn't a procedure or symbol that references a procedure.")
-		end
-	
-	else
-		error( 'WTF value is this?' )
-			
-	end
-	
-	return theResult
+function makeProcedure( inContext, inParameters, inBodyExpressions )
+	return list( createValue( 'symbol', 'procedure' ), inParameters, inBodyExpressions, inContext )
 end
 
 GLOBAL = createContext( )

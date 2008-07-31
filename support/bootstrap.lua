@@ -2,11 +2,29 @@ require 'support/runtime'
 
 --runtime.set( 'dolua', ...createExpressionHere... )
 
-runtime.set( runtime.GLOBAL, 'print', function( inContext, inValueList )
+function defineFunction( inContext, inName, inFormName, inFunction )
+	runtime.set( inContext, inName, inFunction )
+	runtime.gForms[ inFunction ] = runtime.gForms[ inFormName ] 
+end
+
+defineFunction( runtime.GLOBAL, 'print', 'globalWithValues', function( inContext, inValueList )
 	local theValuePair = inValueList
 	while theValuePair do
 		local theValue = theValuePair.head
 		print( theValue )
 		theValuePair = theValuePair.tail
 	end
+end )
+
+defineFunction( runtime.GLOBAL, 'define', 'globalWithValues', function( inContext, inValueList )
+	runtime.set( inContext, inValueList.head.symbol, inValueList.tail )
+end )
+
+defineFunction( runtime.GLOBAL, 'lambda', 'procedure', function( inContext, inValueList )
+	return runtime.list(
+		runtime.createValue( 'symbol', 'procedure' ),
+		inValueList.head, -- argList
+		inValueList.tail, -- bodyExpression(s)
+		inContext         -- for lexical scoping
+	)
 end )

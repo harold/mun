@@ -9,7 +9,7 @@ if not arg.debugLevel then arg.debugLevel = 0 end
 module( 'parser', package.seeall )
 
 gGrammar = [[
-	Program            <- (<Expression> %nl?)+
+	Program            <- (<Expression> %nl?)+ <Space>*
 	Expression         <- &. -> pushExpr <Space>? (<QuotedExpression> / <UnquotedExpression>)
 	QuotedExpression   <- ("'[" <Space>? <Item>? (<Space> <Item>)* <Space>? "]") -> popQuotedExpr
 	UnquotedExpression <- ( "[" <Space>? <Item>? (<Space> <Item>)* <Space>? "]") -> popUnquotedExpr
