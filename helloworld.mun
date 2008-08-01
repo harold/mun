@@ -1,15 +1,7 @@
 [print 42]
-[define map
-	[lambda [inFunc inList]
-		[join [inFunc [head inList]]
-			[map 'inFunc [tail inList]]
-		]
-	]
-]
 [define square
 	[lambda [x]
 		[* x x]
 	]
 ]
-[print [map 'square '[1 2 3 4 5]]]
-
+[print [square 5]]

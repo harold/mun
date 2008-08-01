@@ -90,6 +90,9 @@ function listOfValues( inContext, inList )
 end
 
 function eval( inContext, inValue )
+	-- print( string.rep( '=',40))
+	-- table.dump( type(inValue) == 'table' and inValue.head or inValue )
+
 	local theResult
 	if isSimpleValue( inValue ) then
 		theResult = inValue
@@ -98,18 +101,23 @@ function eval( inContext, inValue )
 	elseif isQuoted( inValue ) then
 		theResult = inValue
 	elseif isLambda( inValue ) then
+		-- TODO: shouldn't this be a special form?
 		theResult = makeProcedure( inContext, inValue.tail, inValue.tail.tail )
 	elseif isPair( inValue ) then
+		-- TODO: lookup forms
 		local theRunnable = eval( inContext, inValue.head )
 		if not theRunnable then
 			print( "Failed to find runnable/procedure:" )
 			table.dump( inValue.head )
 			error( "Bailing..." )
-		end		
-		theResult = apply( theRunnable, listOfValues( inContext, inValue.tail ) )
+		end
+		local theArgList = listOfValues( inContext, inValue.tail )
+		theResult = apply( theRunnable, theArgList )
 	else
 		error( "Unknown value type passed to eval ("..tostring(inValue)..")")
 	end
+	
+	-- table.dump( theResult )	
 	return theResult
 end
 

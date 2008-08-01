@@ -11,7 +11,7 @@ defineFunction( runtime.GLOBAL, 'print', 'globalWithValues', function( inContext
 	local theValuePair = inValueList
 	while theValuePair do
 		local theValue = theValuePair.head
-		print( theValue )
+		print( "PRINT SEZ: " .. tostring(theValue) )
 		theValuePair = theValuePair.tail
 	end
 end )
@@ -20,11 +20,11 @@ defineFunction( runtime.GLOBAL, 'define', 'globalWithValues', function( inContex
 	runtime.set( inContext, inValueList.head.symbol, inValueList.tail )
 end )
 
-defineFunction( runtime.GLOBAL, 'lambda', 'procedure', function( inContext, inValueList )
-	return runtime.list(
-		runtime.createValue( 'symbol', 'procedure' ),
-		inValueList.head, -- argList
-		inValueList.tail, -- bodyExpression(s)
-		inContext         -- for lexical scoping
-	)
-end )
+-- defineFunction( runtime.GLOBAL, 'lambda', 'procedure', function( inContext, inValueList )
+-- 	return runtime.list(
+-- 		runtime.createValue( 'symbol', 'procedure' ),
+-- 		inValueList.head, -- argList
+-- 		inValueList.tail, -- bodyExpression(s)
+-- 		inContext         -- for lexical scoping
+-- 	)
+-- end )

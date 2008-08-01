@@ -1,4 +1,8 @@
 function table.dump( t, accessPath, tablePath )
+	if type(t) ~= 'table' then
+		return print(t)
+	end
+
 	if not tablePath  then tablePath  = {} end
 	if not accessPath then
 		accessPath = { '__table__' }
