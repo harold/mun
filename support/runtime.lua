@@ -126,7 +126,7 @@ function apply( inRunnable, inArgList )
 	-- local theContext = theForm( inValue )
 		
 	if isFunction( inRunnable ) then
-		inRunnable( theContext, inArgList )
+		return inRunnable( theContext, inArgList )
 	elseif isPair( inRunnable ) then
 		table.dump( inRunnable )
 --		error( "Not implemented: evaluating sub-lists" )

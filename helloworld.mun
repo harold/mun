@@ -1,4 +1,6 @@
 [print 42]
+[print [* 8 3]]
+[print [* 5 [* 4 3]]]
 [define square
 	[lambda [x]
 		[* x x]
