@@ -134,8 +134,7 @@ function apply( inRunnable, inArgList )
 		return inRunnable( theContext, inArgList )
 	elseif isPair( inRunnable ) then
 		local theContext = createContext( inRunnable.tail.tail.tail.head )
-		-- TODO: generalize this for more than one argument
-		theContext[ inRunnable.tail.head.head.head.symbol ] = inArgList.head
+		augmentContext( theContext, inRunnable.tail.head.head, inArgList )
 		return eval( theContext, inRunnable.tail.head.tail, "apply!" )
 	else
 		print( "WARNING (This used to be an error?): WTF KIND OF RUNNABLE IS THIS? ("..tostring(inRunnable)..")" )
@@ -149,6 +148,13 @@ end
 
 function makeDefinition( inContext, inList )
 	runtime.set( inContext, inList.tail.head.symbol, eval( inContext, inList.tail.tail.head, "makeDefinition" ) )
+end
+
+function augmentContext( inContext, inArgNameList, inArgValueList )
+	inContext[ inArgNameList.head.symbol ] = inArgValueList.head
+	if inArgNameList.tail then
+		augmentContext( inContext, inArgNameList.tail, inArgValueList.tail )
+	end
 end
 
 GLOBAL = createContext( )
